@@ -1,0 +1,28 @@
+# Python generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Secrets
+.env
+.env.*
+
+# Logs and runtime artifacts
+*.log
+*.pid
+
+# Model checkpoints are distributed separately from normal Git commits
+models/**/*.pt
+models/**/*.pth
+
+# Local data and generated results
+data/
+results/
+outputs/
+
+# Release-only backups and runtime artifacts
+*.before_release_path_fix
+release_server.log
+release_server.pid

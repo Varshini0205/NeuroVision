@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a1020">
+<title>NeuroVision V2 | MRI Analysis</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #080e1b;
+  --header: #0d1627;
+  --panel: #111c2f;
+  --panel2: #16233a;
+  --panel3: #1b2a43;
+  --line: #293b56;
+  --text: #eef4ff;
+  --muted: #9bacc5;
+  --blue: #6595ff;
+  --blue2: #3773ee;
+  --teal: #54dec0;
+  --danger: #ff7f91;
+  --radius: 16px;
+}
+* { box-sizing: border-box; }
+html { min-height: 100%; background: var(--bg); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+}
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, .dropzone:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+.topbar {
+  height: 76px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 clamp(18px, 5vw, 76px);
+  background: rgba(13,22,39,.96);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-mark {
+  width: 42px; height: 42px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 12px;
+  color: var(--teal);
+  background: #173047;
+  border: 1px solid #27516a;
+}
+.brand-mark svg { width: 23px; height: 23px; }
+.brand-name { font-size: 17px; font-weight: 750; letter-spacing: -.5px; }
+.brand-sub {
+  display: block; margin-top: 1px; color: var(--muted);
+  font-size: 10px; font-weight: 650; letter-spacing: 1.5px;
+}
+.nav { display: flex; align-items: center; gap: 5px; }
+.nav button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 10px 14px;
+  border-radius: 9px;
+  font-weight: 600;
+  transition: background .2s, color .2s, border-color .2s;
+}
+.nav button:hover { color: var(--text); background: var(--panel2); }
+.nav button.active {
+  color: #dce8ff;
+  background: #1b3152;
+  border-color: #2d4a75;
+}
+main {
+  width: min(1280px, calc(100% - 40px));
+  margin: 30px auto 44px;
+  min-height: 590px;
+}
+.page { display: none; animation: appear .25s ease-out; }
+.page.active { display: block; }
+@keyframes appear {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-heading { margin-bottom: 22px; }
+.eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--teal); font-size: 10px; font-weight: 750;
+  letter-spacing: 1.5px; text-transform: uppercase;
+}
+.live-dot {
+  width: 7px; height: 7px; display: inline-block;
+  border-radius: 50%; background: var(--teal);
+  box-shadow: 0 0 0 4px rgba(84,222,192,.10);
+}
+h1 { margin: 8px 0 5px; font-size: clamp(25px,3vw,33px); line-height: 1.2; letter-spacing: -.8px; }
+h2 { margin: 0; font-size: 17px; letter-spacing: -.25px; }
+h3 { margin: 0; font-size: 14px; }
+p { margin: 6px 0 0; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.workflow {
+  display: grid; grid-template-columns: repeat(3,minmax(0,1fr));
+  margin-bottom: 22px; padding: 15px 20px;
+  background: var(--header); border: 1px solid var(--line);
+  border-radius: 13px;
+}
+.workflow-step {
+  position: relative; display: flex; align-items: center; gap: 11px;
+  min-width: 0; color: #7488a5;
+}
+.workflow-step:not(:last-child)::after {
+  content: ""; height: 1px; position: absolute;
+  left: 38px; right: 12px; top: 16px;
+  transform: translateX(25%);
+  background: var(--line);
+}
+.step-number {
+  z-index: 1; width: 32px; height: 32px; flex-shrink: 0;
+  display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid #394b65; background: var(--panel);
+  color: var(--muted); font-size: 12px; font-weight: 750;
+}
+.workflow-step.current { color: var(--text); }
+.workflow-step.current .step-number {
+  background: #1d3b60; border-color: var(--blue); color: #fff;
+  box-shadow: 0 0 0 3px rgba(101,149,255,.10);
+}
+.workflow-step.done .step-number {
+  background: #153b3a; border-color: #2d8178; color: var(--teal);
+}
+.step-copy { z-index: 1; min-width: 0; background: var(--header); padding-right: 8px; }
+.step-copy strong { display: block; font-size: 12px; }
+.step-copy span { display: block; font-size: 10px; color: var(--muted); }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.panel-head {
+  padding: 20px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; border-bottom: 1px solid var(--line);
+}
+.panel-body { padding: 22px; }
+.panel-title { display: flex; align-items: center; gap: 10px; }
+.icon-box {
+  width: 35px; height: 35px; flex-shrink: 0;
+  display: grid; place-items: center; border-radius: 10px;
+  background: #1a3049; color: var(--teal);
+  border: 1px solid #2b4a65;
+}
+.icon-box svg { width: 18px; height: 18px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 9px; border: 1px solid var(--line);
+  background: var(--panel2); color: #c4d2e7;
+  border-radius: 20px; font-size: 10px; font-weight: 700;
+}
+.pill.good { color: var(--teal); background: #12312f; border-color: #285b55; }
+.pill.blue { color: #a9c4ff; background: #192d4e; border-color: #304b77; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  min-height: 42px; padding: 10px 17px; border-radius: 10px;
+  border: 1px solid var(--line); color: var(--text);
+  background: var(--panel2); font-weight: 700;
+  transition: transform .15s, background .15s, border-color .15s;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); border-color: #526b8d; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-primary {
+  color: #fff; border-color: var(--blue2);
+  background: var(--blue2);
+}
+.btn-primary:hover:not(:disabled) { background: #4b83ff; }
+.btn-quiet { background: transparent; }
+.btn svg { width: 16px; height: 16px; }
+.upload-grid {
+  display: grid; grid-template-columns: minmax(0,.92fr) minmax(0,1.08fr);
+  gap: 18px;
+}
+.dropzone {
+  min-height: 320px; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+  padding: 28px; border: 1px dashed #4b6688; border-radius: 13px;
+  background: #0c1525; transition: border-color .2s, background .2s;
+}
+.dropzone.dragover { border-color: var(--teal); background: #10272d; }
+.drop-icon {
+  width: 56px; height: 56px; display: grid; place-items: center;
+  border-radius: 15px; background: #1a304a; color: var(--blue);
+  border: 1px solid #2d496d; margin-bottom: 14px;
+}
+.drop-icon svg { width: 26px; height: 26px; }
+.dropzone strong { font-size: 15px; }
+.dropzone .muted { margin: 5px 0 17px; font-size: 12px; }
+.file-input { display: none; }
+.preview-shell {
+  position: relative; min-height: 320px; overflow: hidden;
+  display: grid; place-items: center; border-radius: 13px;
+  border: 1px solid var(--line); background: #080d17;
+}
+.preview-shell img { display: block; max-width: 100%; max-height: 410px; object-fit: contain; }
+.preview-placeholder { text-align: center; padding: 25px; color: var(--muted); }
+.preview-placeholder svg { width: 38px; height: 38px; color: #6681a6; margin-bottom: 10px; }
+.preview-placeholder strong { display: block; color: #d3deef; }
+.preview-placeholder p { font-size: 12px; }
+.scan-line {
+  position: absolute; display: none; z-index: 2; left: 0; right: 0; top: 0;
+  height: 3px; pointer-events: none;
+  background: var(--teal);
+  box-shadow: 0 0 18px 5px rgba(84,222,192,.35);
+}
+.scanning .scan-line { display: block; animation: scan 2.1s ease-in-out infinite alternate; }
+.scanning::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg,transparent,rgba(84,222,192,.06),transparent);
+  animation: sweep 2.1s linear infinite;
+}
+@keyframes scan { from { top: 0; } to { top: calc(100% - 3px); } }
+@keyframes sweep { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
+.upload-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap; margin-top: 20px;
+}
+.file-status { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--muted); }
+.file-status span { overflow-wrap: anywhere; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: #647b9b; flex-shrink: 0; }
+.dot.ok { background: var(--teal); }
+.note {
+  padding: 11px 13px; border-radius: 9px; background: #111f31;
+  border: 1px solid #273c56; color: var(--muted); font-size: 11px;
+}
+.two-col { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap: 18px; }
+.image-card { min-width: 0; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); background: #080d17; }
+.image-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 12px 14px; background: var(--panel2);
+  border-bottom: 1px solid var(--line);
+}
+.image-card-head strong { font-size: 12px; }
+.image-stage { min-height: 240px; display: grid; place-items: center; padding: 12px; }
+.image-stage img { max-width: 100%; max-height: 370px; object-fit: contain; }
+.image-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.image-grid .image-stage { min-height: 210px; }
+.section-label {
+  margin: 22px 0 11px; color: var(--muted);
+  font-size: 10px; font-weight: 750; letter-spacing: 1.3px; text-transform: uppercase;
+}
+.meta-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-top: 15px; }
+.meta-card { padding: 13px; border-radius: 10px; background: var(--panel2); border: 1px solid var(--line); }
+.meta-card span { display: block; font-size: 10px; color: var(--muted); }
+.meta-card strong { display: block; margin-top: 5px; font-size: 13px; overflow-wrap: anywhere; }
+.action-row {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; margin-top: 20px;
+}
+.classification-grid { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); gap: 18px; }
+.prediction-card {
+  padding: 25px; background: linear-gradient(150deg,#172a42,#111c2f 68%);
+  border: 1px solid #2c4864; border-radius: 14px;
+}
+.prediction-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.prediction-name { margin: 22px 0 5px; font-size: clamp(24px,3vw,35px); font-weight: 760; letter-spacing: -.8px; overflow-wrap: anywhere; }
+.prediction-sub { font-size: 12px; color: var(--muted); }
+.confidence-number { margin-top: 23px; font-size: 30px; font-weight: 750; letter-spacing: -1px; }
+.confidence-track { height: 6px; margin-top: 9px; background: #27364c; border-radius: 10px; overflow: hidden; }
+.confidence-fill { height: 100%; background: var(--teal); border-radius: inherit; transition: width .6s ease; }
+.score-panel { padding: 22px; }
+.score-row { margin-top: 20px; }
+.score-label { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+.score-label strong { font-size: 12px; }
+.score-label span { color: #c4d3e8; font-size: 11px; font-variant-numeric: tabular-nums; }
+.score-track { height: 7px; border-radius: 9px; background: #26354b; overflow: hidden; }
+.score-fill { height: 100%; border-radius: inherit; background: var(--blue); transition: width .6s ease; }
+.score-row:first-of-type .score-fill { background: var(--teal); }
+.disclaimer {
+  display: flex; align-items: flex-start; gap: 10px; margin-top: 18px;
+  padding: 13px 15px; border: 1px solid #54452d; background: #282219;
+  color: #e4cda2; border-radius: 10px; font-size: 11px;
+}
+.disclaimer svg { width: 17px; height: 17px; flex-shrink: 0; }
+.info-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.info-card { padding: 21px; }
+.info-card-head { display: flex; gap: 13px; align-items: flex-start; }
+.info-card h2 { margin-top: 1px; }
+.info-card p { font-size: 12px; color: var(--muted); }
+.info-list { display: grid; gap: 0; margin-top: 17px; }
+.info-item {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 15px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 12px;
+}
+.info-item span { color: var(--muted); }
+.info-item strong { text-align: right; font-weight: 650; }
+.dataset-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-bottom: 17px; }
+.dataset-stat { padding: 19px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.dataset-stat .number { margin-top: 8px; font-size: 26px; font-weight: 750; letter-spacing: -.5px; }
+.dataset-stat .label { color: var(--muted); font-size: 11px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { text-align: left; padding: 14px 17px; border-bottom: 1px solid var(--line); }
+th { background: var(--panel2); color: #c4d5eb; font-weight: 700; }
+td { color: #d9e4f5; }
+tr:last-child td { border-bottom: 0; }
+.footer {
+  padding: 20px; border-top: 1px solid var(--line); color: #7589a6;
+  text-align: center; font-size: 11px;
+}
+.toast {
+  position: fixed; z-index: 100; right: 22px; bottom: 22px;
+  max-width: min(420px,calc(100vw - 44px)); padding: 13px 17px;
+  border-radius: 11px; border: 1px solid #36516c;
+  background: #14233a; color: var(--text); box-shadow: 0 12px 40px #0005;
+  display: none;
+}
+.toast.show { display: block; animation: appear .2s ease-out; }
+.toast.error { border-color: #8b4657; background: #301c2a; }
+.loading-label { display: none; color: var(--teal); font-size: 11px; margin-top: 12px; }
+.loading .loading-label { display: block; }
+.spinner {
+  display: inline-block; width: 13px; height: 13px;
+  border: 2px solid #3b556a; border-top-color: var(--teal);
+  border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+[hidden] { display: none !important; }
+
+@media (max-width: 760px) {
+  .topbar { height: auto; min-height: 70px; padding: 13px 17px; flex-wrap: wrap; gap: 12px; }
+  .brand-sub { font-size: 9px; letter-spacing: 1px; }
+  .nav { width: 100%; overflow-x: auto; }
+  .nav button { flex: 1; padding: 9px 8px; font-size: 12px; white-space: nowrap; }
+  main { width: calc(100% - 26px); margin-top: 20px; }
+  .workflow { padding: 12px 9px; gap: 5px; }
+  .workflow-step { gap: 6px; }
+  .step-number { width: 27px; height: 27px; font-size: 10px; }
+  .workflow-step:not(:last-child)::after { left: 29px; right: 4px; top: 13px; }
+  .step-copy strong { font-size: 10px; }
+  .step-copy span { display: none; }
+  .panel-head, .panel-body { padding: 16px; }
+  .upload-grid, .two-col, .classification-grid, .info-grid { grid-template-columns: 1fr; }
+  .dropzone, .preview-shell { min-height: 245px; }
+  .image-grid { gap: 9px; }
+  .image-grid .image-stage { min-height: 155px; }
+  .meta-grid { grid-template-columns: 1fr; }
+  .dataset-summary { grid-template-columns: 1fr; }
+  .dataset-stat { padding: 15px; }
+  .dataset-stat .number { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+        <path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8.5"/>
+        <path d="M7 7l3 3m4 4 3 3M17 7l-3 3m-4 4-3 3"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name"><span style="color:var(--teal)">NeuroVision</span></div>
+      <span class="brand-sub">NEURO IMAGING WORKSPACE</span>
+    </div>
+  </div>
+  <nav class="nav" aria-label="Main navigation">
+    <button class="active" data-nav="workspace">MRI Workspace</button>
+    <button data-nav="models">Models</button>
+    <button data-nav="dataset">Dataset</button>
+  </nav>
+</header>
+
+<main>
+  <section class="page active" id="page-workspace">
+    <div class="page-heading">
+      <div class="eyebrow"><span class="live-dot"></span> Research imaging suite</div>
+      <h1 id="page-title">MRI Analysis Workspace</h1>
+    </div>
+
+    <div class="workflow" aria-label="Analysis workflow">
+      <div class="workflow-step current" data-step="input">
+        <div class="step-number">01</div>
+        <div class="step-copy"><strong>MRI Input</strong><span>Upload scan</span></div>
+      </div>
+      <div class="workflow-step" data-step="segmentation">
+        <div class="step-number">02</div>
+        <div class="step-copy"><strong>Segmentation</strong><span>Mask and ROI</span></div>
+      </div>
+      <div class="workflow-step" data-step="results">
+        <div class="step-number">03</div>
+        <div class="step-copy"><strong>Classification</strong><span>Prediction results</span></div>
+      </div>
+    </div>
+
+    <!-- STEP 1: MRI INPUT -->
+    <section class="page active" id="stage-input">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <div class="icon-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="12" cy="12" r="4"/><path d="M7 4V2m10 2V2"/></svg>
+            </div>
+            <div><h2>Upload MRI image</h2><p class="muted small">Upload a brain MRI image to scan.</p></div>
+          </div>
+          <span class="pill">STEP 01 / 03</span>
+        </div>
+        <div class="panel-body">
+          <div class="upload-grid">
+            <div>
+              <input id="mri-file" class="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,image/tiff">
+              <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Choose MRI image">
+                <div class="drop-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 16V4m-5 5 5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>
+                </div>
+                <strong id="file-prompt">Choose an MRI image</strong>
+                <p class="muted">PNG, JPG, WEBP, BMP or TIFF · up to 15 MB</p>
+                <button type="button" class="btn" id="browse-btn">Browse files</button>
+                <p class="small muted" style="margin-top:13px">You can also drag and drop an image here.</p>
+              </div>
+            </div>
+            <div>
+              <div class="image-card-head" style="border:1px solid var(--line);border-radius:10px 10px 0 0">
+                <strong>SCAN PREVIEW</strong><span class="pill" id="preview-pill">Awaiting image</span>
+              </div>
+              <div class="preview-shell" id="input-preview">
+                <div class="scan-line"></div>
+                <div class="preview-placeholder" id="input-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>
+                  <strong>Ready for imaging</strong>
+                  <p>Your MRI preview and scanning animation will appear here.</p>
+                </div>
+                <img id="input-image" alt="Selected MRI preview" hidden>
+              </div>
+              <p class="small muted" style="margin-top:9px">Research tool only. Not intended for standalone clinical diagnosis.</p>
+            </div>
+          </div>
+          <div class="upload-footer">
+            <div class="file-status"><span class="dot" id="file-dot"></span><span id="file-status">No image selected</span></div>
+            <button class="btn btn-primary" id="analyze-btn" disabled>
+              Analyze MRI
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+            </button>
+          </div>
+          <div class="loading-label" id="input-loading"><span class="spinner"></span> Initializing analysis…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 2: SEGMENTATION -->
+    <section class="page" id="stage-segmentation">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <div class="icon-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6 6 18"/></svg>
+            </div>
+            <div><h2>Segmentation &amp; ROI Extraction</h2></div>
+          </div>
+          <span class="pill blue">STEP 02 / 03</span>
+        </div>
+        <div class="panel-body" id="seg-body">
+          <div class="note" id="seg-loading"><span class="spinner"></span> Processing scan with the segmentation and classification pipeline…</div>
+          <div id="seg-content" hidden>
+            <div class="two-col">
+              <div class="image-card">
+                <div class="image-card-head"><strong>MASK OVERLAY</strong><span class="pill good">Model output</span></div>
+                <div class="image-stage"><img id="overlay-image" alt="Segmentation mask overlay"></div>
+              </div>
+              <div class="image-card">
+                <div class="image-card-head"><strong>ROI EXTRACTION</strong><span class="pill">Classifier input region</span></div>
+                <div class="image-stage"><img id="roi-image" alt="Extracted region of interest"></div>
+              </div>
+            </div>
+            <div class="section-label">Segmentation outputs</div>
+            <div class="image-grid">
+              <div class="image-card">
+                <div class="image-card-head"><strong>ORIGINAL MRI</strong></div>
+                <div class="image-stage"><img id="seg-original" alt="Original MRI"></div>
+              </div>
+              <div class="image-card">
+                <div class="image-card-head"><strong>PREDICTED MASK</strong><span class="pill">Binary mask</span></div>
+                <div class="image-stage"><img id="mask-image" alt="Predicted segmentation mask"></div>
+              </div>
+            </div>
+            <div class="meta-grid">
+              <div class="meta-card"><span>Input Dimensions</span><strong id="image-dimensions">—</strong></div>
+              <div class="meta-card"><span>ROI Dimensions</span><strong id="roi-dimensions">—</strong></div>
+              <div class="meta-card"><span>ROI Extraction</span><strong id="roi-method">—</strong></div>
+            </div>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-quiet" id="back-input-btn">← Back to MRI input</button>
+            <button class="btn btn-primary" id="results-btn" disabled>Results <span aria-hidden="true">→</span></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3: CLASSIFICATION RESULTS -->
+    <section class="page" id="stage-results">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">
+            <div class="icon-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5m0 14h16"/><path d="m7 15 4-4 3 2 5-7"/></svg>
+            </div>
+            <div><h2>Classification Results</h2><p class="muted small">Four-class prediction from the extracted image region.</p></div>
+          </div>
+          <span class="pill good">STEP 03 / 03</span>
+        </div>
+        <div class="panel-body">
+          <div class="classification-grid">
+            <div class="prediction-card">
+              <div class="prediction-top"><span class="eyebrow">MODEL PREDICTION</span><span class="pill good">Complete</span></div>
+              <div class="prediction-name" id="predicted-class">—</div>
+              <div class="prediction-sub">Predicted class · ConvNeXt-Tiny</div>
+              <div class="confidence-number" id="confidence-number">—</div>
+              <div class="confidence-track"><div class="confidence-fill" id="confidence-fill" style="width:0%"></div></div>
+              <p class="muted small" style="margin-top:8px">Highest model softmax score. This is not a calibrated clinical probability.</p>
+            </div>
+            <div class="panel score-panel">
+              <h2>Class score distribution</h2>
+              <p class="muted small">Scores returned by the classification model.</p>
+              <div id="score-list"></div>
+            </div>
+          </div>
+          <div class="section-label">Scan summary</div>
+          <div class="meta-grid">
+            <div class="meta-card"><span>Image</span><strong id="result-filename">—</strong></div>
+            <div class="meta-card"><span>Segmentation ROI</span><strong id="result-roi">—</strong></div>
+            <div class="meta-card"><span>Classifier</span><strong>ConvNeXt-Tiny · 4 classes</strong></div>
+          </div>
+          <div class="disclaimer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3 2.8 20h18.4L12 3Z"/><path d="M12 9v5m0 3h.01"/></svg>
+            <div><strong>Research use only.</strong> This prototype is not a medical device and does not provide a diagnosis.</div>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-quiet" id="back-seg-btn">← Back to segmentation</button>
+            <button class="btn btn-primary" id="new-scan-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 9a7 7 0 0 1 12-2l2 2M4 15l2 2a7 7 0 0 0 12-2"/></svg>
+              Scan New MRI
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- MODELS TAB -->
+  <section class="page" id="page-models">
+    <div class="page-heading">
+      <div class="eyebrow"><span class="live-dot"></span> Model registry</div>
+      <h1>Trained models</h1>
+      <p class="muted">The two models used in the <b>NeuroVision</b> inference pipeline.</p>
+    </div>
+    <div class="info-grid">
+      <article class="panel info-card">
+        <div class="info-card-head">
+          <div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3"/></svg></div>
+          <div><h2>HSegFormer</h2><p>Brain MRI segmentation</p></div>
+        </div>
+        <div class="info-list">
+          <div class="info-item"><span>Task</span><strong>Pixel-wise mask prediction</strong></div>
+          <div class="info-item"><span>Input</span><strong>256 × 256 grayscale</strong></div>
+          <div class="info-item"><span>Output</span><strong>Probability map + binary mask</strong></div>
+          <div class="info-item"><span>Checkpoint</span><strong>hsegformer_best.pt</strong></div>
+          <div class="info-item"><span>Pipeline role</span><strong>Segmentation and ROI extraction</strong></div>
+        </div>
+      </article>
+      <article class="panel info-card">
+        <div class="info-card-head">
+          <div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></div>
+          <div><h2>ConvNeXt-Tiny</h2><p>Four-class classification</p></div>
+        </div>
+        <div class="info-list">
+          <div class="info-item"><span>Task</span><strong>MRI class prediction</strong></div>
+          <div class="info-item"><span>Input</span><strong>224 × 224 · 3 channels</strong></div>
+          <div class="info-item"><span>Preprocessing</span><strong>Grayscale to RGB + ImageNet normalization</strong></div>
+          <div class="info-item"><span>Checkpoint</span><strong>convnext_tiny_4class_candidate_best.pt</strong></div>
+          <div class="info-item"><span>Output classes</span><strong>Glioma, meningioma, no tumor, pituitary</strong></div>
+        </div>
+      </article>
+    </div>
+    <div class="note" style="margin-top:17px">The segmentation model generates a mask and ROI. The classification model predicts a class from that ROI.</div>
+  </section>
+
+  <!-- DATASET TAB -->
+  <section class="page" id="page-dataset">
+    <div class="page-heading">
+      <div class="eyebrow"><span class="live-dot"></span> Data overview</div>
+      <h1>Dataset details</h1>
+      <p class="muted">Split sizes recorded in the project manifests for classification and segmentation.</p>
+    </div>
+    <div class="dataset-summary">
+      <div class="dataset-stat"><div class="eyebrow">Classification</div><div class="number">4,894</div><div class="label">Train + validation images</div></div>
+      <div class="dataset-stat"><div class="eyebrow">Segmentation</div><div class="number">3,933</div><div class="label">Train + validation images</div></div>
+      <div class="dataset-stat"><div class="eyebrow">Labels</div><div class="number">4 classes</div><div class="label">Glioma · Meningioma · No tumor · Pituitary</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div><h2>Recorded split sizes</h2><p class="muted small">Manifest counts; not a claim about unique subjects.</p></div><span class="pill">Project metadata</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Task</th><th>Training</th><th>Validation</th><th>Training + validation</th></tr></thead>
+          <tbody>
+            <tr><td>Classification</td><td>3,916</td><td>978</td><td>4,894</td></tr>
+            <tr><td>Segmentation</td><td>3,146</td><td>787</td><td>3,933</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <div class="panel-head"><div><h2>Classification labels</h2><p class="muted small">Configured label-to-index mapping.</p></div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Index</th><th>Label</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>glioma</td><td>Tumour category label</td></tr>
+            <tr><td>1</td><td>meningioma</td><td>Tumour category label</td></tr>
+            <tr><td>2</td><td>no_tumor</td><td>No-tumour category label</td></tr>
+            <tr><td>3</td><td>pituitary</td><td>Tumour category label</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">NeuroVision V2 · Research prototype · Not for standalone clinical diagnosis</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const state = {
+    page: "workspace",
+    stage: "input",
+    file: null,
+    previewUrl: null,
+    result: null,
+    busy: false,
+    toastTimer: null
+  };
+
+  const workflowStages = ["input", "segmentation", "results"];
+  const classLabels = ["glioma", "meningioma", "no_tumor", "pituitary"];
+
+  function toast(message, isError = false) {
+    const el = $("toast");
+    el.textContent = message;
+    el.classList.toggle("error", isError);
+    el.classList.add("show");
+    clearTimeout(state.toastTimer);
+    state.toastTimer = setTimeout(() => el.classList.remove("show"), 4200);
+  }
+
+  function setPage(page) {
+    state.page = page;
+    document.querySelectorAll(".page[id^='page-']").forEach(el => {
+      el.classList.toggle("active", el.id === `page-${page}`);
+    });
+    document.querySelectorAll("[data-nav]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.nav === page);
+      btn.setAttribute("aria-current", btn.dataset.nav === page ? "page" : "false");
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function setStage(stage) {
+    state.stage = stage;
+    workflowStages.forEach((name, i) => {
+      const step = document.querySelector(`[data-step="${name}"]`);
+      step.classList.toggle("current", name === stage);
+      step.classList.toggle("done", workflowStages.indexOf(stage) > i);
+      step.querySelector(".step-number").textContent =
+        workflowStages.indexOf(stage) > i ? "✓" : `0${i + 1}`;
+      $("stage-" + name).classList.toggle("active", name === stage);
+    });
+    const titles = {
+      input: ["MRI analysis workspace", "Upload a scan to begin the guided segmentation and classification workflow."],
+      segmentation: ["Segmentation review", "Review the predicted mask, overlay and extracted region of interest."],
+      results: ["Classification results", "Review the model prediction and the scores for all four classes."]
+    };
+    $("page-title").textContent = titles[stage][0];
+    const pageDescription = $("page-description");
+    if (pageDescription) pageDescription.textContent = titles[stage][1];
+  }
+
+  function dataUrl(base64, mime = "image/png") {
+    if (typeof base64 !== "string" || !base64.length) return "";
+    return `data:${mime};base64,${base64}`;
+  }
+
+  function setImage(id, base64, alt) {
+    const img = $(id);
+    img.alt = alt || "";
+    img.src = dataUrl(base64);
+    img.hidden = !base64;
+  }
+
+  function revokePreview() {
+    if (state.previewUrl) URL.revokeObjectURL(state.previewUrl);
+    state.previewUrl = null;
+  }
+
+  function selectFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast("Please choose a supported image file.", true);
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast("The image exceeds the 15 MB upload limit.", true);
+      return;
+    }
+    revokePreview();
+    state.file = file;
+    state.result = null;
+    state.previewUrl = URL.createObjectURL(file);
+    $("input-image").src = state.previewUrl;
+    $("input-image").hidden = false;
+    $("input-placeholder").hidden = true;
+    $("file-prompt").textContent = file.name;
+    $("file-status").textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+    $("file-dot").classList.add("ok");
+    $("preview-pill").textContent = "Image selected";
+    $("preview-pill").classList.add("good");
+    $("analyze-btn").disabled = state.busy;
+    $("results-btn").disabled = true;
+    $("seg-content").hidden = true;
+    $("seg-loading").hidden = false;
+  }
+
+  function setBusy(busy) {
+    state.busy = busy;
+    $("analyze-btn").disabled = busy || !state.file;
+    $("browse-btn").disabled = busy;
+    $("input-preview").classList.toggle("scanning", busy);
+    $("dropzone").classList.toggle("loading", busy);
+    $("input-loading").style.display = busy ? "block" : "none";
+    $("preview-pill").textContent = busy ? "Scanning…" : (state.file ? "Image selected" : "Awaiting image");
+  }
+
+  
+async function analyze() {
+    if (!state.file || state.busy) return;
+
+    setStage("input");
+    $("input-preview").classList.add("scanning");
+    $("seg-loading").hidden = false; 
+
+    setBusy(true);
+    $("seg-content").hidden = true;
+    $("seg-loading").hidden = false;
+    $("results-btn").disabled = true;
+
+    const minimumAnimation = new Promise(resolve => setTimeout(resolve, 3500));
+
+    try {
+      const form = new FormData();
+      form.append("file", state.file, state.file.name);
+
+      const response = await fetch("/api/scan", { method: "POST", body: form });
+      let data;
+      try { data = await response.json(); }
+      catch (_) { throw new Error("The server returned an unreadable response."); }
+
+      if (!response.ok) {
+        throw new Error(data.detail || data.error || `Scan failed (HTTP ${response.status}).`);
+      }
+
+      for (const key of ["predicted_class", "class_scores", "mri_png",
+                         "mask_png", "mask_overlay_png", "roi_png"]) {
+        if (!(key in data)) throw new Error(`The server response is missing ${key}.`);
+      }
+
+      await minimumAnimation;
+      $("input-preview").classList.remove("scanning");
+
+      state.result = data;
+      renderSegmentation(data);
+      renderClassification(data);
+      $("seg-loading").hidden = true;
+      $("seg-content").hidden = false;
+      $("results-btn").disabled = false;
+      setStage("segmentation");
+      toast("Analysis complete. Review the segmentation outputs.");
+    } catch (err) {
+      console.error("NeuroVision scan error:", err);
+      $("seg-loading").innerHTML =
+        '<strong style="color:var(--danger)">Analysis could not be completed.</strong>' +
+        '<p class="muted small" style="margin-top:6px"></p>' +
+        '<button class="btn" id="retry-btn" type="button" style="margin-top:13px">Retry analysis</button>';
+      $("seg-loading").querySelector("p").textContent = err.message || "Unexpected server error.";
+      $("retry-btn").addEventListener("click", analyze, { once: true });
+      toast(err.message || "Could not analyze this image.", true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+
+  function renderSegmentation(data) {
+    setImage("overlay-image", data.mask_overlay_png, "MRI with predicted mask overlay");
+    setImage("roi-image", data.roi_png, "Extracted region of interest");
+    setImage("seg-original", data.mri_png, "Original MRI");
+    setImage("mask-image", data.mask_png, "Predicted binary segmentation mask");
+    $("image-dimensions").textContent =
+      data.image_width && data.image_height ? `${data.image_width} × ${data.image_height}` : "—";
+    $("roi-dimensions").textContent =
+      data.roi_width && data.roi_height ? `${data.roi_width} × ${data.roi_height}` : "—";
+    $("roi-method").textContent = data.roi_method || "—";
+  }
+
+  function renderClassification(data) {
+    const label = String(data.predicted_class || "Unknown");
+    $("predicted-class").textContent = label.replaceAll("_", " ");
+    $("result-filename").textContent = data.filename || state.file?.name || "—";
+    $("result-roi").textContent = data.roi_method || "—";
+
+    const scores = Array.isArray(data.class_scores) ? data.class_scores : [];
+    const normalized = scores
+      .filter(item => item && typeof item.label === "string")
+      .map(item => ({ label: item.label, score: Number(item.score) }))
+      .filter(item => Number.isFinite(item.score))
+      .sort((a, b) => b.score - a.score);
+
+    const predicted = normalized.find(item => item.label === label);
+    const topScore = predicted ? Math.max(0, Math.min(1, predicted.score)) : 0;
+    $("confidence-number").textContent = `${(topScore * 100).toFixed(2)}%`;
+    $("confidence-fill").style.width = `${topScore * 100}%`;
+
+    const list = $("score-list");
+    list.replaceChildren();
+    normalized.forEach(item => {
+      const pct = Math.max(0, Math.min(100, item.score * 100));
+      const row = document.createElement("div");
+      row.className = "score-row";
+
+      const labelRow = document.createElement("div");
+      labelRow.className = "score-label";
+      const name = document.createElement("strong");
+      name.textContent = item.label.replaceAll("_", " ");
+      const value = document.createElement("span");
+      value.textContent = `${pct.toFixed(4)}%`;
+      labelRow.append(name, value);
+
+      const track = document.createElement("div");
+      track.className = "score-track";
+      const fill = document.createElement("div");
+      fill.className = "score-fill";
+      fill.style.width = `${pct}%`;
+      track.append(fill);
+      row.append(labelRow, track);
+      list.append(row);
+    });
+
+    if (!normalized.length) {
+      list.textContent = "No class scores were returned.";
+    }
+  }
+
+  function resetWorkflow() {
+    if (state.busy) return;
+    state.file = null;
+    state.result = null;
+    $("mri-file").value = "";
+    $("input-image").removeAttribute("src");
+    $("input-image").hidden = true;
+    $("input-placeholder").hidden = false;
+    $("file-prompt").textContent = "Choose an MRI image";
+    $("file-status").textContent = "No image selected";
+    $("file-dot").classList.remove("ok");
+    $("preview-pill").textContent = "Awaiting image";
+    $("preview-pill").classList.remove("good");
+    $("seg-loading").innerHTML =
+      '<span class="spinner"></span> Processing scan with the segmentation and classification pipeline…';
+    $("seg-loading").hidden = false;
+    $("seg-content").hidden = true;
+    $("results-btn").disabled = true;
+    $("score-list").replaceChildren();
+    $("predicted-class").textContent = "—";
+    $("confidence-number").textContent = "—";
+    $("confidence-fill").style.width = "0%";
+    ["overlay-image","roi-image","seg-original","mask-image"].forEach(id => {
+      $(id).removeAttribute("src");
+    });
+    revokePreview();
+    setPage("workspace");
+    setStage("input");
+  }
+
+  $("browse-btn").addEventListener("click", () => $("mri-file").click());
+  $("dropzone").addEventListener("click", e => {
+    if (e.target.closest("button")) return;
+    $("mri-file").click();
+  });
+  $("dropzone").addEventListener("keydown", e => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      $("mri-file").click();
+    }
+  });
+  $("mri-file").addEventListener("change", e => selectFile(e.target.files?.[0]));
+
+  ["dragenter", "dragover"].forEach(type => $("dropzone").addEventListener(type, e => {
+    e.preventDefault();
+    $("dropzone").classList.add("dragover");
+  }));
+  ["dragleave", "drop"].forEach(type => $("dropzone").addEventListener(type, e => {
+    e.preventDefault();
+    $("dropzone").classList.remove("dragover");
+  }));
+  $("dropzone").addEventListener("drop", e => selectFile(e.dataTransfer?.files?.[0]));
+
+  $("analyze-btn").addEventListener("click", () => {
+    console.log("[NeuroVision] Analyze button clicked", {
+      hasFile: !!state.file,
+      busy: state.busy
+    });
+    analyze();
+  });
+  $("back-input-btn").addEventListener("click", () => {
+    if (state.busy) return;
+    setStage("input");
+  });
+  $("results-btn").addEventListener("click", () => {
+    if (!state.result) return;
+    setStage("results");
+  });
+  $("back-seg-btn").addEventListener("click", () => {
+    if (state.result) setStage("segmentation");
+  });
+  $("new-scan-btn").addEventListener("click", resetWorkflow);
+
+  document.querySelectorAll("[data-nav]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (state.busy) {
+        toast("Please wait for the current scan to finish.");
+        return;
+      }
+      setPage(btn.dataset.nav);
+    });
+  });
+
+  // Display backend status without blocking the workspace.
+  fetch("/api/health")
+    .then(r => r.ok ? r.json() : Promise.reject(new Error("Health check failed")))
+    .then(data => {
+      if (data.status !== "ready") {
+        toast("The backend is not ready. Check the server status.", true);
+      }
+    })
+    .catch(() => toast("Backend status could not be verified. Scan requests may fail.", true));
+
+  setPage("workspace");
+  setStage("input");
+})();
+</script>
+</body>
+</html>
