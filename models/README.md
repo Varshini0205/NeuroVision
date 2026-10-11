@@ -2,7 +2,7 @@
 
 **Brain MRI Segmentation and Tumor Classification using Deep Learning**
 
-NeuroVision V2 is a research-oriented project that analyzes brain MRI images using deep learning. It combines **HSegFormer** for brain tumor segmentation and **ConvNeXt-Tiny** for four-class image classification through a web-based interface.
+NeuroVision is a research-oriented project that analyzes brain MRI images using deep learning. It combines **HSegFormer** for brain tumor segmentation and **ConvNeXt-Tiny** for four-class image classification through a web-based interface.
 
 ## Features
 
